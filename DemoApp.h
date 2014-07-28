@@ -63,11 +63,11 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #endif
 
 
-class DemoApp
+class MainApp
 {
 public:
-	DemoApp();
-	~DemoApp();
+	MainApp();
+	~MainApp();
 
 	// Register the window class and call methods for instantiating drawing resources
 	HRESULT Initialize();
@@ -93,6 +93,9 @@ private:
 		UINT width,
 		UINT height
 		);
+
+	//Test ffmpeg
+	int testFFmpeg();
 
 	// The windows procedure.
 	static LRESULT CALLBACK WndProc(
