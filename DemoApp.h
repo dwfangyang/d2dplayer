@@ -1,4 +1,4 @@
-#include <Windows.h>
+ï»¿#include <Windows.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
@@ -17,7 +17,7 @@
 #endif
 #endif
 
-#ifndef INT64_C													//Ó¦¶ÔUINT64_CÎ´¶¨Òå
+#ifndef INT64_C													//åº”å¯¹UINT64_Cæœªå®šä¹‰
 #define INT64_C(c) (c ## LL)
 #define UINT64_C(c) (c ## ULL)
 #endif

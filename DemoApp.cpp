@@ -1,4 +1,4 @@
-#include "DemoApp.h"
+ï»¿#include "DemoApp.h"
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QChar>
@@ -84,7 +84,7 @@ HRESULT MainApp::Initialize()
 		// The factory returns the current system DPI. This is also the value it will use
 		// to create its own windows.
 		m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
-		//MessageBox(0,QString("dpix:%1,dpiy:%2").arg(dpiX).arg(dpiY).toStdWString().c_str(),0,0);		//±¾»úÅÜÎª96£¬96
+		//MessageBox(0,QString("dpix:%1,dpiy:%2").arg(dpiX).arg(dpiY).toStdWString().c_str(),0,0);		//æœ¬æœºè·‘ä¸º96ï¼Œ96
 
 		// Create the window.
 		m_hwnd = CreateWindow(
@@ -108,7 +108,7 @@ HRESULT MainApp::Initialize()
 		}
 	}
 	
-	testFFmpeg();			//²âÊÔffmpegÊı¾İ
+	testFFmpeg();			//æµ‹è¯•ffmpegæ•°æ®
 
 	return hr;
 }
