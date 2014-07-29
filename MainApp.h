@@ -9,6 +9,7 @@
 #include <dwrite.h>
 #include <wincodec.h>
 #include <string>
+#include "ffmpegutils.h"
 
 #ifdef __cplusplus
 #define __STDC_CONSTANT_MACROS

@@ -1,13 +1,6 @@
-﻿#include "DemoApp.h"
-#include <QtCore/QObject>
+﻿#include "MainApp.h"
 #include <QtCore/QString>
-#include <QtCore/QChar>
 using namespace std;
-
-struct buffer_data {
-	uint8_t *ptr;
-	size_t size; ///< size left in the buffer
-};
 
 static int read_packet(void *opaque, uint8_t *buf, int buf_size)
 {
@@ -32,13 +25,13 @@ m_pLightSlateGrayBrush(NULL),
 m_pCornflowerBlueBrush(NULL)
 {
 }
+
 MainApp::~MainApp()
 {
 	SafeRelease(&m_pDirect2dFactory);
 	SafeRelease(&m_pRenderTarget);
 	SafeRelease(&m_pLightSlateGrayBrush);
 	SafeRelease(&m_pCornflowerBlueBrush);
-
 }
 
 void MainApp::RunMessageLoop()
