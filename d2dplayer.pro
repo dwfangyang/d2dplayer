@@ -1,4 +1,4 @@
 TEMPLATE = subdirs
 TARGET = 
 
-SUBDIRS = src/mainapp.pro
+SUBDIRS = mainapp/mainapp.pro
