@@ -1,3 +1,16 @@
 import subprocess
+import os
 
-subprocess.Popen("qmake -spec win32-msvc2008 -r -tp vc d2dplayer.pro") 
+destdir = os.path.join(os.getcwd(),'../build')
+#print destdir
+if not os.path.exists(destdir):
+    os.makedirs(destdir)
+command_list = [
+	'qmake',
+	'-r',
+	'-tp',
+	'vc'
+]
+command_list.append(os.path.join(os.getcwd(),'./cpp/d2dplayer.pro'))
+subprocess.call(command_list, cwd="../build")
+##subprocess.Popen("qmake -spec win32-msvc2008 -r -tp vc d2dplayer.pro")
