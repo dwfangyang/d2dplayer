@@ -1,4 +1,24 @@
-#include "ffmpegutils.h"
+/*
+ * Copyright (c) 2001 Fabrice Bellard
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
 /**
  * @file
@@ -11,6 +31,14 @@
  */
 
 #include <math.h>
+
+#include <libavutil/opt.h>
+#include <libavcodec/avcodec.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/common.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/mathematics.h>
+#include <libavutil/samplefmt.h>
 
 #define INBUF_SIZE 4096
 #define AUDIO_INBUF_SIZE 20480
@@ -47,7 +75,7 @@ static int select_sample_rate(AVCodec *codec)
 }
 
 /* select layout with the highest channel count */
-static uint64_t select_channel_layout(AVCodec *codec)
+static int select_channel_layout(AVCodec *codec)
 {
     const uint64_t *p;
     uint64_t best_ch_layout = 0;
@@ -82,7 +110,7 @@ static void audio_encode_example(const char *filename)
     int buffer_size;
     FILE *f;
     uint16_t *samples;
-	double t,tincr;
+    float t, tincr;
 
     printf("Encode audio file %s\n", filename);
 
@@ -120,8 +148,8 @@ static void audio_encode_example(const char *filename)
         fprintf(stderr, "Could not open codec\n");
         exit(1);
     }
-	
-    fopen_s(&f,filename, "wb");
+
+    f = fopen(filename, "wb");
     if (!f) {
         fprintf(stderr, "Could not open %s\n", filename);
         exit(1);
@@ -146,7 +174,7 @@ static void audio_encode_example(const char *filename)
         fprintf(stderr, "Could not get sample buffer size\n");
         exit(1);
     }
-    samples = (uint16_t*)av_malloc(buffer_size);
+    samples = av_malloc(buffer_size);
     if (!samples) {
         fprintf(stderr, "Could not allocate %d bytes for samples buffer\n",
                 buffer_size);
@@ -244,12 +272,12 @@ static void audio_decode_example(const char *outfilename, const char *filename)
         exit(1);
     }
 
-    fopen_s(&f,filename, "rb");
+    f = fopen(filename, "rb");
     if (!f) {
         fprintf(stderr, "Could not open %s\n", filename);
         exit(1);
     }
-    fopen_s(&outfile,outfilename, "wb");
+    outfile = fopen(outfilename, "wb");
     if (!outfile) {
         av_free(c);
         exit(1);
@@ -328,7 +356,7 @@ static void video_encode_example(const char *filename, int codec_id)
     printf("Encode video file %s\n", filename);
 
     /* find the mpeg1 video encoder */
-    codec = avcodec_find_encoder(AVCodecID(codec_id));
+    codec = avcodec_find_encoder(codec_id);
     if (!codec) {
         fprintf(stderr, "Codec not found\n");
         exit(1);
@@ -346,8 +374,7 @@ static void video_encode_example(const char *filename, int codec_id)
     c->width = 352;
     c->height = 288;
     /* frames per second */
-	AVRational ab = {1,25};
-    c->time_base = ab;
+    c->time_base = (AVRational){1,25};
     /* emit one intra frame every ten frames
      * check frame pict_type before passing frame
      * to encoder, if frame->pict_type is AV_PICTURE_TYPE_I
@@ -367,7 +394,7 @@ static void video_encode_example(const char *filename, int codec_id)
         exit(1);
     }
 
-    fopen_s(&f,filename, "wb");
+    f = fopen(filename, "wb");
     if (!f) {
         fprintf(stderr, "Could not open %s\n", filename);
         exit(1);
@@ -468,7 +495,7 @@ static void pgm_save(unsigned char *buf, int wrap, int xsize, int ysize,
     FILE *f;
     int i;
 
-    fopen_s(&f,filename,"w");
+    f = fopen(filename,"w");
     fprintf(f, "P5\n%d %d\n%d\n", xsize, ysize, 255);
     for (i = 0; i < ysize; i++)
         fwrite(buf + i * wrap, 1, xsize, f);
@@ -491,7 +518,7 @@ static int decode_write_frame(const char *outfilename, AVCodecContext *avctx,
         fflush(stdout);
 
         /* the picture is allocated by the decoder, no need to free it */
-        _snprintf_s(buf, sizeof(buf), outfilename, *frame_count);
+        snprintf(buf, sizeof(buf), outfilename, *frame_count);
         pgm_save(frame->data[0], frame->linesize[0],
                  avctx->width, avctx->height, buf);
         (*frame_count)++;
@@ -546,7 +573,7 @@ static void video_decode_example(const char *outfilename, const char *filename)
         exit(1);
     }
 
-    fopen_s(&f,filename, "rb");
+    f = fopen(filename, "rb");
     if (!f) {
         fprintf(stderr, "Could not open %s\n", filename);
         exit(1);
@@ -600,27 +627,24 @@ static void video_decode_example(const char *outfilename, const char *filename)
     printf("\n");
 }
 
-//int main(int argc, char **argv)
-int encoding_decoding(const char* filename, const char* output_type = NULL)
+int main(int argc, char **argv)
 {
+    const char *output_type;
+
     /* register all the codecs */
     avcodec_register_all();
 
-    //if (argc < 2) {
-    //    printf("usage: %s output_type\n"
-    //           "API example program to decode/encode a media stream with libavcodec.\n"
-    //           "This program generates a synthetic stream and encodes it to a file\n"
-    //           "named test.h264, test.mp2 or test.mpg depending on output_type.\n"
-    //           "The encoded stream is then decoded and written to a raw data output.\n"
-    //           "output_type must be chosen between 'h264', 'mp2', 'mpg'.\n",
-    //           argv[0]);
-    //    return 1;
-    //}
-	if ( output_type == NULL )
-	{
-		MessageBox(0,L"encoding_decoding out_type null",0,0);
-	}
-	
+    if (argc < 2) {
+        printf("usage: %s output_type\n"
+               "API example program to decode/encode a media stream with libavcodec.\n"
+               "This program generates a synthetic stream and encodes it to a file\n"
+               "named test.h264, test.mp2 or test.mpg depending on output_type.\n"
+               "The encoded stream is then decoded and written to a raw data output.\n"
+               "output_type must be chosen between 'h264', 'mp2', 'mpg'.\n",
+               argv[0]);
+        return 1;
+    }
+    output_type = argv[1];
 
     if (!strcmp(output_type, "h264")) {
         video_encode_example("test.h264", AV_CODEC_ID_H264);

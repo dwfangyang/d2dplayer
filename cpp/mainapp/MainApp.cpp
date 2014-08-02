@@ -328,7 +328,7 @@ HRESULT MainApp::OnRender()
 
 int MainApp::testFFmpeg()
 {
-	MessageBox(0,L"pause",0,0);
+	//MessageBox(0,L"pause",0,0);
 		AVFormatContext *fmt_ctx = NULL;
 		AVIOContext *avio_ctx = NULL;
 		AVDictionaryEntry *tag = NULL;
@@ -418,7 +418,7 @@ int MainApp::testFFmpeg()
 int WINAPI WinMain(
 				   HINSTANCE /* hInstance */,
 				   HINSTANCE /* hPrevInstance */,
-				   LPSTR  lpCmdLine ,
+				   LPSTR  /*lpCmdLine*/ ,
 				   int /* nCmdShow */
 				   )
 {
