@@ -3,6 +3,7 @@ TARGET = mainapp
 VERSION = 1.0.0
 DEPENDPATH += 	$(QTDIR)/lib	
 INCLUDEPATH += ../include/ 		\
+				$(QTDIR)/include/QtGui \
 				$(QTDIR)/include/QtCore \
 				"C:\\Program Files\\Microsoft SDKs\\Windows\\v7.1\\Include"
 
