@@ -4,7 +4,8 @@
 static SystemServiceCenter* syssrvcenter = NULL;
 SystemServiceCenter::SystemServiceCenter()
 {
-
+	m_mSysInfo[SCREEN_WIDTH] = GetSystemMetrics(SM_CXSCREEN);
+	m_mSysInfo[SCREEN_HEIGHT] = GetSystemMetrics(SM_CYSCREEN);
 }
 
 SystemServiceCenter::~SystemServiceCenter()
@@ -21,13 +22,13 @@ SystemServiceCenter* SystemServiceCenter::getInstance()
 	return syssrvcenter;
 }
 
-int SystemServiceCenter::getSysProperty(uint32_t index)
+int64_t SystemServiceCenter::getSysProperty(uint32_t index)
 {
 	if ( m_mSysInfo.find(index) != m_mSysInfo.end() )
 	{
 		return m_mSysInfo[index];
 	}
-	return 0;
+	return -1;
 }
 
 void SystemServiceCenter::destroyInstance()

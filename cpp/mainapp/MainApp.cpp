@@ -480,6 +480,15 @@ int WINAPI WinMain(
 	QApplication app(__argc,__argv);
 	qtMainWnd wnd;
 	wnd.setFixedSize(480,360);
+	//wnd.setWindowTitle(title);
+	QPalette palette;
+	palette.setColor(wnd.backgroundRole(),QColor(Qt::red));
+	wnd.setPalette(palette);
+	wnd.setWindowOpacity(0.5);
+	wnd.setWindowFlags(Qt::Window);
+	wnd.setWindowFlags(Qt::FramelessWindowHint);
+	wnd.setPos(qtMainWnd::POS_SCREENCENTER);
 	wnd.show();
+	//wnd.showMinimized();
 	return app.exec();
 }

@@ -9,11 +9,11 @@ class SystemServiceCenter
 public:
 	static SystemServiceCenter* getInstance();
 	static void destroyInstance();
-	int			getSysProperty(uint32_t index);
+	int64_t		getSysProperty(uint32_t index);
 private: 
 	SystemServiceCenter();
-	~SystemServiceCenter();	
+	~SystemServiceCenter();
 
 private:
-	std::map<uint32_t,int>				m_mSysInfo;
+	std::map<uint32_t,int64_t>				m_mSysInfo;
 };
