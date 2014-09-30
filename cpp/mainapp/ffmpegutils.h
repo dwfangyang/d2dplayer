@@ -25,3 +25,5 @@ struct buffer_data {
 	size_t size; ///< size left in the buffer
 };
 #endif
+
+int encoding_decoding(const char* filename, const char* output_type = NULL);

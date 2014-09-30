@@ -6,22 +6,29 @@ INCLUDEPATH += ../include/ 		\
 				$(QTDIR)/include/QtGui \
 				$(QTDIR)/include/QtCore \
 				"C:\\Program Files\\Microsoft SDKs\\Windows\\v7.1\\Include"
-
+MOC_DIR = $(SolutionDir)/bin/$(ConfigurationName)/moc/mainapp
 DESTDIR += $(SolutionDir)/bin/$(ConfigurationName)
-DEFINES += QT_NO_DEBUG NDEBUG _WINDOWS UNICODE WIN32 QT_LARGEFILE_SUPPORT QT_CORE_LIB _UNICODE QT_THREAD_SUPPORT QT_HAVE_MMX QT_HAVE_SSE QT_HAVE_MMXEXT QT_HAVE_SSE2
-QMAKE_CXXFLAGS_RELEASE += -Os -Od
+DEFINES += QT_NO_DEBUG NDEBUG _WINDOWS UNICODE WIN32 QT_LARGEFILE_SUPPORT QT_CORE_LIB QT_GUI_LIB _UNICODE QT_SCRIPT_LIB QT_THREAD_SUPPORT QT_CORE_LIB QT_GUI_LIB QT_DLL
+#QT_NO_DEBUG,NDEBUG,_WINDOWS,UNICODE,WIN32,QT_LARGEFILE_SUPPORT,QT_THREAD_SUPPORT,QT_DLL,QT_HAVE_MMX,QT_HAVE_SSE,QT_HAVE_MMXEXT,QT_HAVE_SSE2
+QMAKE_CXXFLAGS += /Od /MP /Zc:wchar_t- /EHsc /MD /nologo /c /Zi /TP  /W1 
+QMAKE_CXXFLAGS_RELEASE += -Os -Od 
 QMAKE_LFLAGS += /SUBSYSTEM:WINDOWS
-LIBS += "C:\\Program Files\\Microsoft SDKs\\Windows\\v7.1\\Lib\\d2d1.lib" -L"../lib" avcodec.lib avdevice.lib avfilter.lib avformat.lib avutil.lib swscale.lib swresample.lib
+LIBS += "C:\\Program Files\\Microsoft SDKs\\Windows\\v7.1\\Lib\\d2d1.lib" -L"$(SolutionDir)/../d2dplayer/cpp/lib" avcodec.lib avdevice.lib avfilter.lib avformat.lib avutil.lib swscale.lib swresample.lib
 CONFIG(debug, debug|release) {
-	LIBS += QtCored4.lib
+	LIBS += QtCored4.lib QtGuid4.lib
 } else {
-	LIBS += QtCore4.lib
+	LIBS += QtCore4.lib QtGui4.lib
 }
-
-CONFIG += qt thread
+QMAKESPECS = win32-msvc2008
+CONFIG += qt thread build_all windows
+QT = core gui
 
 HEADERS += ffmpegutils.h	\
 			utils.h				\
-			MainApp.h
+			qtMainWnd.h			\
+			SystemServiceCenter.h \
+			MainApp.h				
 SOURCES += ffmpegutils.cpp		\
+			qtMainWnd.cpp		\
+			SystemServiceCenter.cpp  \
 			MainApp.cpp

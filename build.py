@@ -13,4 +13,4 @@ command_list = [
 ]
 command_list.append(os.path.join(os.getcwd(),'./cpp/d2dplayer.pro'))
 subprocess.call(command_list, cwd="../build")
-##subprocess.Popen("qmake -spec win32-msvc2008 -r -tp vc d2dplayer.pro")
+##subprocess.Popen("qmake -r -tp vc d2dplayer.pro")

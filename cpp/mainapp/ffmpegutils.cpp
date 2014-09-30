@@ -601,7 +601,7 @@ static void video_decode_example(const char *outfilename, const char *filename)
 }
 
 //int main(int argc, char **argv)
-int encoding_decoding(const char* filename, const char* output_type = NULL)
+int encoding_decoding(const char* filename, const char* output_type)
 {
     /* register all the codecs */
     avcodec_register_all();

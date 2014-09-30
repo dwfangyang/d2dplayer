@@ -10,6 +10,11 @@
 #include <wincodec.h>
 #include <string>
 #include "ffmpegutils.h"
+#include <QObject>
+#include <QPointer>
+#include <QtGui/QWidget>
+#include <QtCore/qnamespace.h>
+class QGraphicsScene;
 
 #ifdef __cplusplus
 #define __STDC_CONSTANT_MACROS
@@ -63,52 +68,65 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 #endif
 
+//
+//class MainApp
+//{
+//public:
+//	MainApp();
+//	~MainApp();
+//
+//	// Register the window class and call methods for instantiating drawing resources
+//	HRESULT Initialize();
+//
+//	// Process and dispatch messages
+//	void RunMessageLoop();
+//
+//	void initQt();
+//	void addItem();
+//private:
+//	// Initialize device-independent resources.
+//	HRESULT CreateDeviceIndependentResources();
+//
+//	// Initialize device-dependent resources.
+//	HRESULT CreateDeviceResources();
+//
+//	// Release device-dependent resource.
+//	void DiscardDeviceResources();
+//
+//	// Draw content.
+//	HRESULT OnRender();
+//
+//	// Resize the render target.
+//	void OnResize(
+//		UINT width,
+//		UINT height
+//		);
+//
+//	//Test ffmpeg
+//	int testFFmpeg();
+//
+//	// The windows procedure.
+//	static LRESULT CALLBACK WndProc(
+//		HWND hWnd,
+//		UINT message,
+//		WPARAM wParam,
+//		LPARAM lParam
+//		);
+//private:
+//	HWND m_hwnd;
+//	ID2D1Factory* m_pDirect2dFactory;
+//	ID2D1HwndRenderTarget* m_pRenderTarget;
+//	ID2D1SolidColorBrush* m_pLightSlateGrayBrush;
+//	ID2D1SolidColorBrush* m_pCornflowerBlueBrush;
+//
+//	QPointer<QWidget>					m_pWidget;
+//	QPointer<QGraphicsScene>		m_pScene;
+//};
 
-class MainApp
-{
-public:
-	MainApp();
-	~MainApp();
-
-	// Register the window class and call methods for instantiating drawing resources
-	HRESULT Initialize();
-
-	// Process and dispatch messages
-	void RunMessageLoop();
-
-private:
-	// Initialize device-independent resources.
-	HRESULT CreateDeviceIndependentResources();
-
-	// Initialize device-dependent resources.
-	HRESULT CreateDeviceResources();
-
-	// Release device-dependent resource.
-	void DiscardDeviceResources();
-
-	// Draw content.
-	HRESULT OnRender();
-
-	// Resize the render target.
-	void OnResize(
-		UINT width,
-		UINT height
-		);
-
-	//Test ffmpeg
-	int testFFmpeg();
-
-	// The windows procedure.
-	static LRESULT CALLBACK WndProc(
-		HWND hWnd,
-		UINT message,
-		WPARAM wParam,
-		LPARAM lParam
-		);
-private:
-	HWND m_hwnd;
-	ID2D1Factory* m_pDirect2dFactory;
-	ID2D1HwndRenderTarget* m_pRenderTarget;
-	ID2D1SolidColorBrush* m_pLightSlateGrayBrush;
-	ID2D1SolidColorBrush* m_pCornflowerBlueBrush;
-};
+//class QWinWidget : public QWidget
+//{
+//	Q_OBJECT
+//public:
+//	QWinWidget(QObect* parent);
+//	~QWinWidget();
+//};
