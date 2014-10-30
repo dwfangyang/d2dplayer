@@ -6,7 +6,9 @@ using namespace std;
 class FString
 {
 	enum Bit{
-		BIT_
+		BIT_SPARED = 2,
+		BIT_NEWED = 30,
+		BIT_STRTYPE,
 	};
 public:
 	FString();
@@ -16,8 +18,9 @@ public:
 	string toStdString();
 	wstring toStdWString(); 
 private:
-	void stdtostdw();
+	string getLastErrorStr();
 private:
-	uint32_t		m_uFlag;		//最高位标识str or wstr,次高位代表是否为new,余下30位代表长度
+	uint32_t		m_uFlag;		//最高位标识str or wstr,次高位代表是否为new,余下30位代表new出来的长度
 	void*			m_pStr;
+	string		m_sErr;
 };

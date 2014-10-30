@@ -421,27 +421,11 @@ int MainApp::testFFmpeg()
 		av_dump_format(fmt_ctx, 0, input_filename, 0);
 		while ((tag = av_dict_get(fmt_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
 		{
-			size_t size;
 			printf("%s=%s\n", tag->key, tag->value);
-			std::wstringstream wstream;
-			size_t len = strlen(tag->key);
-			wchar_t* tmp = new wchar_t[len+1];
-			tmp[len] = 0;
-			++len;
-			mbstowcs_s(&size,tmp,len,tag->key,_TRUNCATE);
-			wstream << tmp;
-			delete[] tmp;
-			len = strlen(tag->value);
-			tmp = new wchar_t[len+1];
-			tmp[len] = 0;
-			++len;
-			//OutputDebugStringA(tag->value);
-			mbstowcs_s(&size,tmp,len,tag->value,_TRUNCATE);
-			wstream << "=" << tmp << L"\r\n";
-			std::wstring str;
-			wstream >> str;
-			OutputDebugStringW(str.c_str());
-			delete[] tmp;
+			wstring key = FString(tag->key).toStdWString();
+			wstring value = FString(tag->value).toStdWString();
+			OutputDebugStringW(key.c_str());
+			OutputDebugStringW(value.c_str());
 		}
 
 	end:
