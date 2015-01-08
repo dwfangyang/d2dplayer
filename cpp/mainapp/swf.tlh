@@ -663,7 +663,7 @@ FlashObject;
 // Wrapper method implementations
 //
 
-#include "g:\d2dplayer\build\mainapp\release\swf.tli"
+#include ".\swf.tli"
 
 } // namespace ShockwaveFlashObjects
 

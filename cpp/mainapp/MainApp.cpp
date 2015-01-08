@@ -4,7 +4,12 @@
 #include "qtMainWnd.h"
 #include "swf.tlh"
 #include "FString.h"
+#include "assert.h"
+#include "atlbase.h"
+#include "atlhost.h"
 using namespace std;
+using ShockwaveFlashObjects::IShockwaveFlashPtr;
+using ShockwaveFlashObjects::IShockwaveFlash;
 
 static int read_packet(void *opaque, uint8_t *buf, int buf_size)
 {
@@ -53,81 +58,62 @@ void MainApp::RunMessageLoop()
 HRESULT MainApp::Initialize()
 {
 	HRESULT hr;
-
 	// Initialize device-indpendent resources, such
 	// as the Direct2D factory.
 	hr = CreateDeviceIndependentResources();
 
+	CHECKVALIDRETURN( SUCCEEDED(hr), hr );
+	// Register the window class.
+	WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
+	wcex.style         = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc   = MainApp::WndProc;
+	wcex.cbClsExtra    = 0;
+	wcex.cbWndExtra    = sizeof(LONG_PTR);
+	wcex.hInstance     = HINST_THISCOMPONENT;
+	wcex.hbrBackground = NULL;
+	wcex.lpszMenuName  = NULL;
+	wcex.hCursor       = LoadCursor(NULL, IDI_APPLICATION);
+	wcex.lpszClassName = L"D2DDemoApp";
+
+	RegisterClassEx(&wcex);
+
+
+	// Because the CreateWindow function takes its size in pixels,
+	// obtain the system DPI and use it to scale the window size.
+	FLOAT dpiX, dpiY;
+
+	// The factory returns the current system DPI. This is also the value it will use
+	// to create its own windows.
+	m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
+	//MessageBox(0,QString("dpix:%1,dpiy:%2").arg(dpiX).arg(dpiY).toStdWString().c_str(),0,0);		//本机跑为96，96
+
+	// Create the window.
+	m_hwnd = CreateWindow(
+		L"D2DDemoApp",
+		L"Direct2D Demo App",
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		static_cast<UINT>(ceil(640.f * dpiX / 96.f)),
+		static_cast<UINT>(ceil(480.f * dpiY / 96.f)),
+		NULL,
+		NULL,
+		HINST_THISCOMPONENT,
+		this
+		);
+	hr = m_hwnd ? S_OK : E_FAIL;
 	if (SUCCEEDED(hr))
 	{
-		// Register the window class.
-		WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
-		wcex.style         = CS_HREDRAW | CS_VREDRAW;
-		wcex.lpfnWndProc   = MainApp::WndProc;
-		wcex.cbClsExtra    = 0;
-		wcex.cbWndExtra    = sizeof(LONG_PTR);
-		wcex.hInstance     = HINST_THISCOMPONENT;
-		wcex.hbrBackground = NULL;
-		wcex.lpszMenuName  = NULL;
-		wcex.hCursor       = LoadCursor(NULL, IDI_APPLICATION);
-		wcex.lpszClassName = L"D2DDemoApp";
-
-		RegisterClassEx(&wcex);
-
-
-		// Because the CreateWindow function takes its size in pixels,
-		// obtain the system DPI and use it to scale the window size.
-		FLOAT dpiX, dpiY;
-
-		// The factory returns the current system DPI. This is also the value it will use
-		// to create its own windows.
-		m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
-		//MessageBox(0,QString("dpix:%1,dpiy:%2").arg(dpiX).arg(dpiY).toStdWString().c_str(),0,0);		//本机跑为96，96
-
-		// Create the window.
-		m_hwnd = CreateWindow(
-			L"D2DDemoApp",
-			L"Direct2D Demo App",
-			WS_OVERLAPPEDWINDOW,
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
-			static_cast<UINT>(ceil(640.f * dpiX / 96.f)),
-			static_cast<UINT>(ceil(480.f * dpiY / 96.f)),
-			NULL,
-			NULL,
-			HINST_THISCOMPONENT,
-			this
-			);
-		hr = m_hwnd ? S_OK : E_FAIL;
-		if (SUCCEEDED(hr))
-		{
-			ShowWindow(m_hwnd, SW_SHOWNORMAL);
-			//UpdateWindow(m_hwnd);
-			//initQt();
-		}
+		ShowWindow(m_hwnd, SW_SHOWNORMAL);
+		//UpdateWindow(m_hwnd);
+		//initQt();
 	}
-	
-	testFFmpeg();			//测试ffmpeg数据
+
+	//testFFmpeg();			//测试ffmpeg数据
+
+	initFlash();
 
 	return hr;
-}
-
-void MainApp::initQt()
-{
-	//m_pWidget = new QWidget(NULL,Qt::Window);
-	//SetParent(m_pWidget->winId(),m_hwnd);
-	//QGraphicsView* view = new QGraphicsView(m_pWidget);
-	//m_pScene = new QGraphicsScene(view);
-	//view->setScene(m_pScene);
-}
-
-void MainApp::addItem()
-{
-	//initQt();
-	//QGraphicsTextItem* item = new QGraphicsTextItem();
-	//m_pScene->addItem(item);
-	//item->setPlainText("iewok");
-	//item->show();
 }
 
 HRESULT MainApp::CreateDeviceIndependentResources()
@@ -244,7 +230,6 @@ LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 					ValidateRect(hwnd, NULL);
 					result = 0;
 					wasHandled = true;
-					pDemoApp->addItem();
 				}
 				break;
 
@@ -424,8 +409,8 @@ int MainApp::testFFmpeg()
 			printf("%s=%s\n", tag->key, tag->value);
 			wstring key = FString(tag->key).toStdWString();
 			wstring value = FString(tag->value).toStdWString();
-			OutputDebugStringW(key.c_str());
-			OutputDebugStringW(value.c_str());
+			OutputDebugString(key.c_str()); wstring
+			OutputDebugString(value.c_str());
 		}
 
 	end:
@@ -446,6 +431,35 @@ int MainApp::testFFmpeg()
 	return 0;	
 }
 
+void MainApp::initFlash()
+{
+	IShockwaveFlash* flash = NULL;
+	IID flashid;
+	if ( SUCCEEDED( CLSIDFromProgID(L"ShockwaveFlash.ShockwaveFlash",&flashid)) )
+	{
+		if(SUCCEEDED(CoCreateInstance(flashid, NULL, CLSCTX_INPROC_SERVER,__uuidof(IShockwaveFlash), (void **)&flash)))
+		{
+			IViewObject2* ivo2 = NULL;
+			//IID iid_ivo2;
+			//IIDFromString(__uuidof(IViewObject2),&iid_ivo2);
+			if ( SUCCEEDED(flash->QueryInterface(__uuidof(IViewObject2),(void**)&ivo2)) )
+			{
+				//if( SUCCEEDED(AtlAxAttachControl(ivo2,m_hwnd,NULL) ))
+				//{
+				//	//::MessageBox(0,L"attach",0,0);
+				//}
+			}
+			//if ( SUCCEEDED(flash->LoadMovie(0,L"F:\\ok.swf")) )
+			//{
+			//	if( flash->FlashVersion()  ) 
+			//	{
+			//		MessageBox(0,QString::number(flash->FlashVersion()).toStdWString().c_str(),0,0);
+			//	}
+			//}
+		}
+	}
+}
+
 int WINAPI WinMain(
 				   HINSTANCE /* hInstance */,
 				   HINSTANCE /* hPrevInstance */,
@@ -459,7 +473,7 @@ int WINAPI WinMain(
 	 The return value is ignored, because we want to continue running in the
 	 unlikely event that HeapSetInformation fails.*/
 	HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-
+	
 	if (SUCCEEDED(CoInitialize(NULL)))
 	{
 		{
@@ -467,11 +481,15 @@ int WINAPI WinMain(
 
 			if (SUCCEEDED(app.Initialize()))
 			{
-				app.RunMessageLoop();
+				app.RunMessageLoop(); 
 			}
 		}
 		CoUninitialize();
 	}
+	string c = "A";
+	BYTE i = FNetWork::pop_byte( c.data() );
+	QString ab = QString::number( i );
+	//MessageBox(0,ab.toStdWString().c_str(),TEXT("title"),MB_YESNO);
 	//char ** param = NULL;
 	//int i = 0;
 	//qtMainWnd * wnd = new qtMainWnd(i,param);
@@ -487,14 +505,14 @@ int WINAPI WinMain(
 //{
 //	//DebugBreak();
 //	//throw 2;
-//	//IShockwaveFlashPtr flash = NULL;
+//	IShockwaveFlashPtr flash = NULL;
 //	////CoCreateInstance()
 //	//CoInitialize(NULL);
-//	//IID flashid;
-//	//if ( SUCCEEDED( CLSIDFromProgID(L"ShockwaveFlash.ShockwaveFlash",&flashid)) )
-//	//{
-//	//	CoCreateInstance(flashid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IUnknown), (void **)&flash);
-//	//}
+	//IID flashid;
+	//if ( SUCCEEDED( CLSIDFromProgID(L"ShockwaveFlash.ShockwaveFlash",&flashid)) )
+	//{
+	//	CoCreateInstance(flashid, NULL, CLSCTX_INPROC_SERVER, __uuidof(IUnknown), (void **)&flash);
+	//}
 //	//IIDFromString(L"D27CDB6E-AE6D-11cf-96B8-444553540000",&flashid);//LPCOLESTR
 //	//CoCreateInstance(flashid,NULL,CLSCTX_INPROC_SERVER,)
 //	//QApplication app(__argc,__argv);

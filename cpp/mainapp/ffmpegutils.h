@@ -5,7 +5,7 @@
 #define INT64_C(c) (c ## LL)
 #define UINT64_C(c) (c ## ULL)
 #endif
-#include "Windows.h"
+#include "utils.h"
 #ifdef __cplusplus  
 extern "C"   
 {  

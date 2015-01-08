@@ -5,7 +5,6 @@
 #include <QMainWindow>
 #include "inttypes.h"
 #include "utils.h"
-#include "windows.h"
 
 class SystemServiceCenter;
 class qtMainWnd: public QMainWindow

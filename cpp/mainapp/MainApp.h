@@ -1,4 +1,6 @@
-﻿#include <Windows.h>
+﻿#ifndef __MAINAPP_SRC_MAINAPP_H
+#define __MAINAPP_SRC_MAINAPP_H
+
 #include <stdlib.h>
 #include <cstring>
 #include <sstream>
@@ -83,9 +85,6 @@ public:
 
 	// Process and dispatch messages
 	void RunMessageLoop();
-
-	void initQt();
-	void addItem();
 private:
 	// Initialize device-independent resources.
 	HRESULT CreateDeviceIndependentResources();
@@ -107,6 +106,8 @@ private:
 
 	//Test ffmpeg
 	int testFFmpeg();
+	//flash com
+	void initFlash();
 
 	// The windows procedure.
 	static LRESULT CALLBACK WndProc(
@@ -126,10 +127,12 @@ private:
 	QPointer<QGraphicsScene>		m_pScene;
 };
 
-class QWinWidget : public QWidget
-{
-	Q_OBJECT
-public:
-	QWinWidget(QObject* parent);
-	~QWinWidget();
-};
+//class QWinWidget : public QWidget
+//{
+//	Q_OBJECT
+//public:
+//	QWinWidget(QObject* parent);
+//	~QWinWidget();
+//};
+
+#endif

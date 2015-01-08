@@ -1,4 +1,7 @@
-#include "Windows.h"
+#ifndef __MAINAPP_SRC_SYSTEMSERVICECENTER_H
+#define __MAINAPP_SRC_SYSTEMSERVICECENTER_H
+
+#include "utils.h"
 #include "inttypes.h"
 #include <iostream>
 #include <map>
@@ -17,3 +20,5 @@ private:
 private:
 	std::map<uint32_t,int64_t>				m_mSysInfo;
 };
+
+#endif

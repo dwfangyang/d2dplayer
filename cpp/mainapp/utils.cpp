@@ -21,18 +21,14 @@ void Utils::setBit(uint32_t& value,BYTE offsetstart,BYTE offsetfinish,uint32_t c
 
 bool Utils::getBit(uint32_t value,BYTE offset)
 {
-	IF ( offset < BIT_MAX )
-		return false;
-	ENDIF
+	CHECKVALIDRETURN( offset < BIT_MAX, false );
 	uint32_t mask = 0x1 << offset;
 	return value & mask ? true:false;
 }
 
 uint32_t Utils::getBit(uint32_t value,BYTE offsetstart,BYTE offsetfinish)
 {
-	IF ( offsetfinish <= BIT_MAX && offsetfinish > offsetstart )
-		return 0;
-	ENDIF
+	CHECKVALIDRETURN( offsetfinish <= BIT_MAX && offsetfinish > offsetstart , 0 );
 	uint32_t dstmask = (0xffffffff >> offsetstart << offsetstart ) << (BIT_MAX-offsetfinish) >> (BIT_MAX-offsetfinish);
 	return (dstmask & value) >> offsetstart;
 }

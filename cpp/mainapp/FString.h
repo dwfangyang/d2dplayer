@@ -1,6 +1,9 @@
+#ifndef _FSTRING
+#define _FSTRING
+
 #include <string>
 #include "inttypes.h"
-#include "Windows.h"
+#include "utils.h"
 using namespace std;
 
 class FString
@@ -24,3 +27,5 @@ private:
 	void*			m_pStr;
 	string		m_sErr;
 };
+
+#endif

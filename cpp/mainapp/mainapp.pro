@@ -23,13 +23,14 @@ QMAKESPECS = win32-msvc2008
 CONFIG += qt thread build_all windows
 QT = core gui
 
-HEADERS += ffmpegutils.h	\
+HEADERS += ffmpegutils.h		\
 			utils.h				\
 			qtMainWnd.h			\
 			SystemServiceCenter.h \
 			MainApp.h			\
 			swf.tlh				\
-			FString.h
+			FString.h			\
+			fnetwork.h			\
 			
 SOURCES += ffmpegutils.cpp		\
 			qtMainWnd.cpp		\
@@ -37,4 +38,5 @@ SOURCES += ffmpegutils.cpp		\
 			MainApp.cpp					\
 			swf.tli					\
 			FString.cpp				\
-			utils.cpp
+			utils.cpp				\
+			fnetwork.cpp

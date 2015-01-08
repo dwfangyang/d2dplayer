@@ -4,8 +4,8 @@
 static SystemServiceCenter* syssrvcenter = NULL;
 SystemServiceCenter::SystemServiceCenter()
 {
-	m_mSysInfo[SCREEN_WIDTH] = GetSystemMetrics(SM_CXSCREEN);
-	m_mSysInfo[SCREEN_HEIGHT] = GetSystemMetrics(SM_CYSCREEN);
+	m_mSysInfo[Utils::SCREEN_WIDTH] = GetSystemMetrics(SM_CXSCREEN);
+	m_mSysInfo[Utils::SCREEN_HEIGHT] = GetSystemMetrics(SM_CYSCREEN);
 }
 
 SystemServiceCenter::~SystemServiceCenter()

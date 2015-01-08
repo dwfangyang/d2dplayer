@@ -36,18 +36,16 @@ void qtMainWnd::mouseMoveEvent(QMouseEvent *event)
 
 void qtMainWnd::setPos(uint32_t pos)
 {
+	CHECKVALID( m_pSysCenter );
 	switch( pos )
 	{
 	case POS_SCREENCENTER:
 		{
-			if ( m_pSysCenter )
-			{
-				int width = (int)m_pSysCenter->getSysProperty(SCREEN_WIDTH);
-				int height = (int)m_pSysCenter->getSysProperty(SCREEN_HEIGHT);
-				int left = width/2 - size().width()/2;
-				int top = height/2 - size().height()/2;
-				move( left, top );
-			}
+			int width = (int)m_pSysCenter->getSysProperty(Utils::SCREEN_WIDTH);
+			int height = (int)m_pSysCenter->getSysProperty(Utils::SCREEN_HEIGHT);
+			int left = width/2 - size().width()/2;
+			int top = height/2 - size().height()/2;
+			move( left+500, top );
 		}
 		break;
 	}
