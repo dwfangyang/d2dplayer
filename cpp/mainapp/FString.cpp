@@ -1,5 +1,6 @@
-#include "FString.h"
+﻿#include "FString.h"
 #include "utils.h"
+#include "math.h"
 
 FString::FString():m_pStr(NULL),m_uFlag(0)
 {
@@ -69,4 +70,19 @@ wstring FString::toStdWString()
 string FString::getLastErrorStr()
 {
 	return m_sErr;
+}
+
+FString FString::number( int num)
+{
+	int len = numLen(num);
+	PSTR  c = new CHAR[len+1];
+	sprintf_s( c, len+1, "%d", num);
+	return FString(c);
+}
+
+int FString::numLen( int num)
+{
+	int num_abs = abs(num);
+	int len = int(log10(double(num_abs)));
+	return len + (num_abs>pow(double(10),double(len))) + ( num_abs != num );
 }

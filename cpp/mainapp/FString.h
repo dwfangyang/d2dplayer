@@ -1,4 +1,4 @@
-#ifndef _FSTRING
+ï»¿#ifndef _FSTRING
 #define _FSTRING
 
 #include <string>
@@ -18,12 +18,14 @@ public:
 	FString( LPCSTR p );
 	FString( LPWCH wp );
 	~FString();
+	static FString number(int);
 	string toStdString();
 	wstring toStdWString(); 
 private:
+	static int numLen(int ); 
 	string getLastErrorStr();
 private:
-	uint32_t		m_uFlag;		//×î¸ßÎ»±êÊ¶str or wstr,´Î¸ßÎ»´ú±íÊÇ·ñÎªnew,ÓàÏÂ30Î»´ú±ínew³öÀ´µÄ³¤¶È
+	uint32_t		m_uFlag;		//æœ€é«˜ä½æ ‡è¯†str or wstr,æ¬¡é«˜ä½ä»£è¡¨æ˜¯å¦ä¸ºnew,ä½™ä¸‹30ä½ä»£è¡¨newå‡ºæ¥çš„é•¿åº¦
 	void*			m_pStr;
 	string		m_sErr;
 };

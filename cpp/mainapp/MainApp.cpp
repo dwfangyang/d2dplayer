@@ -486,9 +486,9 @@ int WINAPI WinMain(
 		}
 		CoUninitialize();
 	}
-	string c = "A";
-	BYTE i = FNetWork::pop_byte( c.data() );
-	QString ab = QString::number( i );
+	//string c = "A";
+	//BYTE i = FNetWork::pop_byte( c.data() );
+	//FString ab = FString::number( i );
 	//MessageBox(0,ab.toStdWString().c_str(),TEXT("title"),MB_YESNO);
 	//char ** param = NULL;
 	//int i = 0;
