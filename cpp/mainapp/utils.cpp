@@ -32,3 +32,29 @@ uint32_t Utils::getBit(uint32_t value,BYTE offsetstart,BYTE offsetfinish)
 	uint32_t dstmask = (0xffffffff >> offsetstart << offsetstart ) << (BIT_MAX-offsetfinish) >> (BIT_MAX-offsetfinish);
 	return (dstmask & value) >> offsetstart;
 }
+
+Utils::FFont::~FFont()
+{
+	deleteFont();
+}
+
+void Utils::FFont::loadFont( HDC hdc )
+{
+	CHECKVALID( hdc );
+	deleteFont();
+	HFONT font = createWinFont( hdc );
+	SelectObject( hdc, font );
+}
+
+void Utils::FFont::deleteFont()
+{
+	CHECKVALID( m_hFont );
+	DeleteObject( m_hFont );
+}
+
+HFONT Utils::FFont::createWinFont( HDC hdc )
+{
+	int nHeight = -MulDiv( m_iPixelHeight , GetDeviceCaps(hdc, LOGPIXELSY), 72);
+	HFONT font = CreateFont( nHeight,0, 0,0, FW_NORMAL,FALSE,FALSE,FALSE,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_SWISS,TEXT("simhei") );
+	return font;
+}

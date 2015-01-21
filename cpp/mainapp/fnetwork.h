@@ -1,7 +1,7 @@
 #ifndef _FNETWORK
 #define _FNETWORK
 
-#include <winsock.h>
+#include <winsock2.h>
 #include "inttypes.h"
 
 namespace FNetWork

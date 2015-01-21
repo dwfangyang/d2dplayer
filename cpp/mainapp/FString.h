@@ -2,7 +2,6 @@
 #define _FSTRING
 
 #include <string>
-#include "inttypes.h"
 #include "utils.h"
 using namespace std;
 

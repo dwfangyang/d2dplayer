@@ -1,6 +1,7 @@
 ﻿#ifndef __MAINAPP_SRC_MAINAPP_H
 #define __MAINAPP_SRC_MAINAPP_H
 
+#include "utils.h"
 #include <stdlib.h>
 #include <cstring>
 #include <sstream>
@@ -19,30 +20,6 @@
 #include <QtGui/QWidget>
 #include <QtCore/qnamespace.h>
 #include <atlcomcli.h>
-class QGraphicsScene;
-
-#ifdef __cplusplus
-#define __STDC_CONSTANT_MACROS
-#ifdef _STDINT_H
-#undef _STDINT_H
-#endif
-#endif
-
-#ifndef INT64_C													//应对UINT64_C未定义
-#define INT64_C(c) (c ## LL)
-#define UINT64_C(c) (c ## ULL)
-#endif
-
-#ifdef __cplusplus  
-extern "C"   
-{  
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavformat/avio.h>
-#include <libavutil/file.h>
-#include <libavutil/dict.h>
-}  
-#endif 
 
 template<class Interface>
 inline void SafeRelease(
@@ -57,17 +34,13 @@ inline void SafeRelease(
 	}
 }
 
-
-#ifndef Assert
-#if defined( DEBUG ) || defined( _DEBUG )
-#define Assert(b) do {if (!(b)) {OutputDebugStringA("Assert: " #b "\n");}} while(0)
-#else
-#define Assert(b)
-#endif //DEBUG || _DEBUG
-#endif
-
-
-
+//#ifndef Assert
+//#if defined( DEBUG ) || defined( _DEBUG )
+//#define Assert(b) do {if (!(b)) {OutputDebugStringA("Assert: " #b "\n");}} while(0)
+//#else
+//#define Assert(b)
+//#endif //DEBUG || _DEBUG
+//#endif
 #ifndef HINST_THISCOMPONENT
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
@@ -85,7 +58,13 @@ public:
 
 	// Process and dispatch messages
 	void RunMessageLoop();
+	void static CDECL MessageBoxPrintf(PTSTR caption, PTSTR szFormat,...);
+	static void textMetric( HDC hdc, int& cxChar,int& cyChar,int& cxCap );
 private:
+	HBRUSH	getYellowBrush();
+	static HFONT getFont( HDC hdc );
+	void releaseFont();
+	void			releaseYellowBrush();
 	// Initialize device-independent resources.
 	HRESULT CreateDeviceIndependentResources();
 
@@ -123,16 +102,29 @@ private:
 	ID2D1SolidColorBrush* m_pLightSlateGrayBrush;
 	ID2D1SolidColorBrush* m_pCornflowerBlueBrush;
 
+	HBRUSH									m_bYellowBrush;
 	QPointer<QWidget>					m_pWidget;
-	QPointer<QGraphicsScene>		m_pScene;
 };
 
-//class QWinWidget : public QWidget
-//{
-//	Q_OBJECT
-//public:
-//	QWinWidget(QObject* parent);
-//	~QWinWidget();
-//};
 
+
+#define NUMLINES ( (int) (sizeof systemmetrics /sizeof systemmetrics[0]))
+struct {
+	int Index;
+	TCHAR* szLabel;
+	TCHAR* szDesc;
+}
+systemmetrics[] = {
+	SM_CXSCREEN, TEXT("SM_CXSCREEN"),TEXT("Screen width in pixels"),
+	SM_CYSCREEN,TEXT("SM_CYSCREEN"),TEXT("Screen height in pixels"),
+	SM_CXVSCROLL,TEXT("SM_CXVSCROLL"),TEXT("Vertical scroll width"),
+	SM_CYHSCROLL,TEXT("SM_CYHSCROLL"),TEXT("horizontal scroll width"),
+	SM_CYCAPTION,TEXT("SM_CYCAPTION"),TEXT("Caption bar height"),
+	SM_CXBORDER,TEXT("SM_CXBORDER"),TEXT("Window border width"),
+	SM_CYBORDER,TEXT("SM_CYBORDER"),TEXT("Window border height"),
+	SM_CXFIXEDFRAME,TEXT("SM_CXFIXEDFRAME"),TEXT("Dialog window frame width"),
+	SM_CYFIXEDFRAME,TEXT("SM_CYFIXEDFRAME"),TEXT("Dialog window frame height"),
+	SM_CYVTHUMB,TEXT("SM_CYVTHUMB"),TEXT("垂直滚动条卷动方块高度"),
+	SM_CXHTHUMB,TEXT("SM_CXHTHUMB"),TEXT("水平滚动条卷动方块宽度")
+};
 #endif

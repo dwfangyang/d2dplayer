@@ -3,28 +3,15 @@
 #include <QApplication>
 #include "qtMainWnd.h"
 #include "swf.tlh"
-#include "FString.h"
 #include "assert.h"
 #include "atlbase.h"
 #include "atlhost.h"
+#include "utils.h"
+#include "FString.h"
 using namespace std;
 using ShockwaveFlashObjects::IShockwaveFlashPtr;
 using ShockwaveFlashObjects::IShockwaveFlash;
-
-static int read_packet(void *opaque, uint8_t *buf, int buf_size)
-{
-	struct buffer_data *bd = (struct buffer_data *)opaque;
-	buf_size = FFMIN(buf_size, int(bd->size));
-
-	printf("ptr:%p size:%zu\n", bd->ptr, bd->size);
-
-	/* copy internal buffer data to buf */
-	memcpy(buf, bd->ptr, buf_size);
-	bd->ptr  += buf_size;
-	bd->size -= buf_size;
-
-	return buf_size;
-}
+using namespace Utils;
 
 MainApp::MainApp() :
 m_hwnd(NULL),
@@ -33,11 +20,12 @@ m_pRenderTarget(NULL),
 m_pLightSlateGrayBrush(NULL),
 m_pCornflowerBlueBrush(NULL)
 {
-	FString str("好的");
+	//FString str("好的");
 }
 
 MainApp::~MainApp()
 {
+	releaseYellowBrush();
 	SafeRelease(&m_pDirect2dFactory);
 	SafeRelease(&m_pRenderTarget);
 	SafeRelease(&m_pLightSlateGrayBrush);
@@ -73,6 +61,7 @@ HRESULT MainApp::Initialize()
 	wcex.hbrBackground = NULL;
 	wcex.lpszMenuName  = NULL;
 	wcex.hCursor       = LoadCursor(NULL, IDI_APPLICATION);
+	wcex.hbrBackground = getYellowBrush();//( HBRUSH ) GetStockObject( LTGRAY_BRUSH );
 	wcex.lpszClassName = L"D2DDemoApp";
 
 	RegisterClassEx(&wcex);
@@ -101,6 +90,7 @@ HRESULT MainApp::Initialize()
 		HINST_THISCOMPONENT,
 		this
 		);
+
 	hr = m_hwnd ? S_OK : E_FAIL;
 	if (SUCCEEDED(hr))
 	{
@@ -130,41 +120,35 @@ HRESULT MainApp::CreateDeviceResources()
 {
 	HRESULT hr = S_OK;
 
-	if (!m_pRenderTarget)
-	{
-		RECT rc;
-		GetClientRect(m_hwnd, &rc);
+	CHECKVALIDRETURN( m_pRenderTarget, E_FAIL );
 
-		D2D1_SIZE_U size = D2D1::SizeU(
-			rc.right - rc.left,
-			rc.bottom - rc.top
-			);
+	RECT rc;
+	GetClientRect(m_hwnd, &rc);
 
-		// Create a Direct2D render target.
-		hr = m_pDirect2dFactory->CreateHwndRenderTarget(
-			D2D1::RenderTargetProperties(),
-			D2D1::HwndRenderTargetProperties(m_hwnd, size),
-			&m_pRenderTarget
-			);
+	D2D1_SIZE_U size = D2D1::SizeU(
+		rc.right - rc.left,
+		rc.bottom - rc.top
+		);
 
+	// Create a Direct2D render target.
+	hr = m_pDirect2dFactory->CreateHwndRenderTarget(
+		D2D1::RenderTargetProperties(),
+		D2D1::HwndRenderTargetProperties(m_hwnd, size),
+		&m_pRenderTarget
+		);
 
-		if (SUCCEEDED(hr))
-		{
-			// Create a gray brush.
-			hr = m_pRenderTarget->CreateSolidColorBrush(
-				D2D1::ColorF(D2D1::ColorF::LightSlateGray),
-				&m_pLightSlateGrayBrush
-				);
-		}
-		if (SUCCEEDED(hr))
-		{
-			// Create a blue brush.
-			hr = m_pRenderTarget->CreateSolidColorBrush(
-				D2D1::ColorF(D2D1::ColorF::CornflowerBlue),
-				&m_pCornflowerBlueBrush
-				);
-		}
-	}
+	CHECKEDCALL( hr, 	// Create a gray brush.
+		m_pRenderTarget->CreateSolidColorBrush(
+		D2D1::ColorF(D2D1::ColorF::LightSlateGray),
+		&m_pLightSlateGrayBrush
+		)
+	);
+	CHECKEDCALL( hr, // Create a blue brush.
+		m_pRenderTarget->CreateSolidColorBrush(
+		D2D1::ColorF(D2D1::ColorF::CornflowerBlue),
+		&m_pCornflowerBlueBrush
+		)
+	);
 
 	return hr;
 }
@@ -179,6 +163,7 @@ void MainApp::DiscardDeviceResources()
 LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT result = 0;
+	static int cxChar = 0, cyChar = 0, cxCap = 0;
 
 	if (message == WM_CREATE)
 	{
@@ -200,53 +185,72 @@ LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 			GWLP_USERDATA
 			)));
 
-		bool wasHandled = false;
-
-		if (pDemoApp)
+		bool washandled = false;
+		switch (message)
 		{
-			switch (message)
+		case WM_SIZE:
 			{
-			case WM_SIZE:
-				{
-					UINT width = LOWORD(lParam);
-					UINT height = HIWORD(lParam);
-					pDemoApp->OnResize(width, height);
-				}
-				result = 0;
-				wasHandled = true;
-				break;
-
-			case WM_DISPLAYCHANGE:
-				{
-					InvalidateRect(hwnd, NULL, FALSE);
-				}
-				result = 0;
-				wasHandled = true;
-				break;
-
-			case WM_PAINT:
-				{
-					pDemoApp->OnRender();
-					ValidateRect(hwnd, NULL);
-					result = 0;
-					wasHandled = true;
-				}
-				break;
-
-			case WM_DESTROY:
-				{
-					PostQuitMessage(0);
-				}
-				result = 1;
-				wasHandled = true;
-				break;
+				UINT width = LOWORD(lParam);
+				UINT height = HIWORD(lParam);
+				pDemoApp->OnResize(width, height);
 			}
-		}
+			//PlaySound (TEXT("hellowin.wav"),NULL,SND_FILENAME|SND_ASYNC);
+			washandled = true;	
+			result = 0;
+			break;
 
-		if (!wasHandled)
-		{
-			result = DefWindowProc(hwnd, message, wParam, lParam);
+		case WM_DISPLAYCHANGE:
+			{
+				InvalidateRect(hwnd, NULL, FALSE);
+			}
+			washandled = true;
+			result = 0;
+			break;
+
+		case WM_PAINT:
+			{
+				//pDemoApp->OnRender();
+				PAINTSTRUCT ps;
+				RECT rect;
+				GetClientRect( hwnd, &rect );
+				//InvalidateRect( hwnd, &rect, false );
+				HDC hdc = BeginPaint(hwnd,&ps);
+				FFont font(18);
+				font.loadFont( hdc );
+				textMetric( hdc, cxChar,cyChar,cxCap );
+				//DrawText( hdc, TEXT("hello, the world good or not, it is 1234"), -1, &rect,DT_CENTER|DT_SINGLELINE|DT_VCENTER);
+				//TextOut( hdc, 10,0, TEXT("hello, the world good or not, it is 1234"), wcslen(TEXT("hello, the world good or not, it is 1234")));
+				int linecount = NUMLINES;
+				TCHAR szbuffer[1024];
+				int mode = SetBkMode( hdc, TRANSPARENT );
+				for( int i = 0; i < linecount; ++i )
+				{
+					TextOut( hdc, 3 , cyChar* i, systemmetrics[i].szLabel, wcslen( systemmetrics[i].szLabel ) );
+					TextOut( hdc, 3 + 22 * cxCap , cyChar* i, systemmetrics[i].szDesc, wcslen( systemmetrics[i].szDesc) );
+					SetTextAlign( hdc, TA_RIGHT | TA_TOP );
+					TextOut( hdc, 3 + 54* cxCap, cyChar* i, szbuffer, wsprintf( szbuffer, TEXT("%5d"), ::GetSystemMetrics(systemmetrics[i].Index) ) );
+					SetTextAlign( hdc, TA_LEFT | TA_TOP );
+				}
+				EndPaint( hwnd, &ps );
+				if ( mode )
+				{
+					SetBkMode( hdc, mode );
+				}
+				//ValidateRect(hwnd, NULL);
+				result = 0;
+			}
+			washandled = true;
+			break;
+
+		case WM_DESTROY:
+			{
+				PostQuitMessage(0);
+			}
+			washandled = true;
+			result = 1;
+			break;
 		}
+		CHECKVALIDRETURN( washandled, DefWindowProc(hwnd, message, wParam, lParam));
 	}
 
 	return result;
@@ -460,6 +464,45 @@ void MainApp::initFlash()
 	}
 }
 
+void CDECL MainApp::MessageBoxPrintf( PTSTR caption, PTSTR szFormat,... )
+{
+	TCHAR buf[1024];
+	va_list arglist;
+	va_start(arglist,szFormat);
+	size_t size = sizeof(buf)/sizeof(TCHAR);
+	_vsntprintf_s(buf,size,szFormat,arglist);
+	MessageBox(0,buf,caption,0);
+	va_end(arglist);
+}
+
+void MainApp::textMetric(  HDC hdc, int& cxChar,int& cyChar,int& cxCap )
+{
+	CHECKVALID( hdc );
+	TEXTMETRIC tm;
+	GetTextMetrics( hdc, &tm );
+	cxChar = tm.tmAveCharWidth;
+	cyChar = tm.tmHeight + tm.tmExternalLeading;
+	cxCap = ( tm.tmPitchAndFamily & 1 ? 3 : 2 )  * cxChar / 2;
+}
+
+HBRUSH MainApp::getYellowBrush()
+{
+	m_bYellowBrush = CreateSolidBrush( 0x00ffff );
+	return m_bYellowBrush;
+}
+
+void MainApp::releaseYellowBrush()
+{
+	DeleteObject( m_bYellowBrush );
+}
+
+HFONT MainApp::getFont( HDC hdc )
+{
+	int nHeight = -MulDiv(18, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+	HFONT font = CreateFont( nHeight,0, 0,0, FW_NORMAL,FALSE,FALSE,FALSE,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_SWISS,_T("simhei") );
+	return font;
+}
+
 int WINAPI WinMain(
 				   HINSTANCE /* hInstance */,
 				   HINSTANCE /* hPrevInstance */,
@@ -473,7 +516,6 @@ int WINAPI WinMain(
 	 The return value is ignored, because we want to continue running in the
 	 unlikely event that HeapSetInformation fails.*/
 	HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-	
 	if (SUCCEEDED(CoInitialize(NULL)))
 	{
 		{
@@ -482,6 +524,7 @@ int WINAPI WinMain(
 			if (SUCCEEDED(app.Initialize()))
 			{
 				app.RunMessageLoop(); 
+				//MainApp::MessageBoxPrintf(TEXT("targetsize"),TEXT("screen is %1 pixels wide, %2 pixels wide"),10,20);
 			}
 		}
 		CoUninitialize();
