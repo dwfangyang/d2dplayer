@@ -1,24 +1,24 @@
 ﻿#include "MainApp.h"
-#include <QtCore/QString>
-#include <QApplication>
-#include "qtMainWnd.h"
 #include "swf.tlh"
 #include "assert.h"
 #include "atlbase.h"
 #include "atlhost.h"
 #include "utils.h"
 #include "FString.h"
+#include "SystemServiceCenter.h"
+#include "strsafe.h"
 using namespace std;
 using ShockwaveFlashObjects::IShockwaveFlashPtr;
 using ShockwaveFlashObjects::IShockwaveFlash;
 using namespace Utils;
 
-MainApp::MainApp() :
-m_hwnd(NULL),
-m_pDirect2dFactory(NULL),
-m_pRenderTarget(NULL),
-m_pLightSlateGrayBrush(NULL),
-m_pCornflowerBlueBrush(NULL)
+UINT MainApp::m_uWndWidth = 0;
+UINT MainApp::m_uWndHeight = 0;
+int		MainApp::m_iCxChar = 0;
+int		MainApp::m_iCyChar = 0 ;
+int		MainApp::m_iCxCap = 0 ;
+
+MainApp::MainApp() :m_hwnd(NULL),m_pDirect2dFactory(NULL),m_pRenderTarget(NULL),m_pLightSlateGrayBrush(NULL),m_pCornflowerBlueBrush(NULL)
 {
 	//FString str("好的");
 }
@@ -50,41 +50,50 @@ HRESULT MainApp::Initialize()
 	// as the Direct2D factory.
 	hr = CreateDeviceIndependentResources();
 
-	CHECKVALIDRETURN( SUCCEEDED(hr), hr );
-	// Register the window class.
-	WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
-	wcex.style         = CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc   = MainApp::WndProc;
-	wcex.cbClsExtra    = 0;
-	wcex.cbWndExtra    = sizeof(LONG_PTR);
-	wcex.hInstance     = HINST_THISCOMPONENT;
-	wcex.hbrBackground = NULL;
-	wcex.lpszMenuName  = NULL;
-	wcex.hCursor       = LoadCursor(NULL, IDI_APPLICATION);
-	wcex.hbrBackground = getYellowBrush();//( HBRUSH ) GetStockObject( LTGRAY_BRUSH );
-	wcex.lpszClassName = L"D2DDemoApp";
-
-	RegisterClassEx(&wcex);
-
-
 	// Because the CreateWindow function takes its size in pixels,
 	// obtain the system DPI and use it to scale the window size.
 	FLOAT dpiX, dpiY;
+	if ( SUCCEEDED( hr ) )
+	{
+		// Register the window class.
+		WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
+		wcex.style         = CS_HREDRAW | CS_VREDRAW;
+		wcex.lpfnWndProc   = MainApp::WndProc;
+		wcex.cbClsExtra    = 0;
+		wcex.cbWndExtra    = sizeof(LONG_PTR);
+		wcex.hInstance     = HINST_THISCOMPONENT;
+		wcex.hbrBackground = NULL;
+		wcex.lpszMenuName  = NULL;
+		//wcex.hIcon			= LoadIcon( HINST_THISCOMPONENT, MAKEINTRESOURCE(IDI_D2D) );
+		wcex.hCursor       = LoadCursor(NULL, IDI_APPLICATION);
+		wcex.hbrBackground = getYellowBrush();//( HBRUSH ) GetStockObject( LTGRAY_BRUSH );
+		wcex.lpszClassName = L"D2DDemoApp";
 
-	// The factory returns the current system DPI. This is also the value it will use
-	// to create its own windows.
-	m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
-	//MessageBox(0,QString("dpix:%1,dpiy:%2").arg(dpiX).arg(dpiY).toStdWString().c_str(),0,0);		//本机跑为96，96
+		RegisterClassEx(&wcex);
 
+
+
+		// The factory returns the current system DPI. This is also the value it will use
+		// to create its own windows.
+		m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
+		//MessageBox(0,QString("dpix:%1,dpiy:%2").arg(dpiX).arg(dpiY).toStdWString().c_str(),0,0);		//本机跑为96，96
+	}
+	// Get desktop dc
+	HDC desktophdc = GetDC(NULL);
+	// Get native resolution
+	dpiX = FLOAT(GetDeviceCaps(desktophdc,LOGPIXELSX));
+	dpiY = FLOAT(GetDeviceCaps(desktophdc,LOGPIXELSY));
 	// Create the window.
+	UINT width = static_cast<UINT>(ceil(640.f * dpiX / 96.f));
+	UINT height = static_cast<UINT>(ceil(480.f * dpiY / 96.f));
 	m_hwnd = CreateWindow(
 		L"D2DDemoApp",
 		L"Direct2D Demo App",
-		WS_OVERLAPPEDWINDOW,
+		WS_OVERLAPPEDWINDOW|WS_VSCROLL|WS_HSCROLL,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		static_cast<UINT>(ceil(640.f * dpiX / 96.f)),
-		static_cast<UINT>(ceil(480.f * dpiY / 96.f)),
+		width,
+		height,
 		NULL,
 		NULL,
 		HINST_THISCOMPONENT,
@@ -95,7 +104,7 @@ HRESULT MainApp::Initialize()
 	if (SUCCEEDED(hr))
 	{
 		ShowWindow(m_hwnd, SW_SHOWNORMAL);
-		//UpdateWindow(m_hwnd);
+		UpdateWindow(m_hwnd);
 		//initQt();
 	}
 
@@ -163,7 +172,9 @@ void MainApp::DiscardDeviceResources()
 LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT result = 0;
-	static int cxChar = 0, cyChar = 0, cxCap = 0;
+	static int iVscrollPos = 0;
+	SCROLLINFO scrollinfo;
+	int iPaintbeg = 0,iPaintend = 0;
 
 	if (message == WM_CREATE)
 	{
@@ -191,8 +202,19 @@ LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 		case WM_SIZE:
 			{
 				UINT width = LOWORD(lParam);
-				UINT height = HIWORD(lParam);
+				UINT height  = HIWORD(lParam);
 				pDemoApp->OnResize(width, height);
+				HDC hdc = GetDC( hwnd );
+				FFont font(10);
+				font.loadFont( hdc );
+				textMetric( hdc , m_iCxChar, m_iCyChar, m_iCxCap );
+				updateScroll( hwnd, width , height );
+				ReleaseDC( hwnd, hdc );
+				CHAR buf[1000];
+				double a = SystemServiceCenter::getInstance()->getCurrentCpuUsageValue();
+				//StringCbPrintf( buf, 1000*sizeof(TCHAR), TEXT("%10.5lf"), a );
+				sprintf( buf, "%10.5lf", a );
+				//buf[len] = '\0';
 			}
 			//PlaySound (TEXT("hellowin.wav"),NULL,SND_FILENAME|SND_ASYNC);
 			washandled = true;	
@@ -211,24 +233,31 @@ LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 			{
 				//pDemoApp->OnRender();
 				PAINTSTRUCT ps;
-				RECT rect;
-				GetClientRect( hwnd, &rect );
+				/*RECT rect;
+				GetClientRect( hwnd, &rect );*/
 				//InvalidateRect( hwnd, &rect, false );
 				HDC hdc = BeginPaint(hwnd,&ps);
-				FFont font(18);
+				FFont font(10);
 				font.loadFont( hdc );
-				textMetric( hdc, cxChar,cyChar,cxCap );
+				textMetric( hdc , m_iCxChar, m_iCyChar, m_iCxCap );
+				scrollinfo.cbSize = sizeof(scrollinfo);
+				scrollinfo.fMask = SIF_POS;
+				GetScrollInfo( hwnd, SB_VERT, &scrollinfo );
+				iVscrollPos = scrollinfo.nPos;
+				iPaintbeg = max ( 0, iVscrollPos + ps.rcPaint.top / m_iCyChar );
+				iPaintend = min ( NUMLINES - 1, iVscrollPos + ps.rcPaint.bottom / m_iCyChar );
 				//DrawText( hdc, TEXT("hello, the world good or not, it is 1234"), -1, &rect,DT_CENTER|DT_SINGLELINE|DT_VCENTER);
 				//TextOut( hdc, 10,0, TEXT("hello, the world good or not, it is 1234"), wcslen(TEXT("hello, the world good or not, it is 1234")));
-				int linecount = NUMLINES;
+				//int linecount = NUMLINES;
 				TCHAR szbuffer[1024];
 				int mode = SetBkMode( hdc, TRANSPARENT );
-				for( int i = 0; i < linecount; ++i )
-				{
-					TextOut( hdc, 3 , cyChar* i, systemmetrics[i].szLabel, wcslen( systemmetrics[i].szLabel ) );
-					TextOut( hdc, 3 + 22 * cxCap , cyChar* i, systemmetrics[i].szDesc, wcslen( systemmetrics[i].szDesc) );
+				for( int i = iPaintbeg; i <= iPaintend; ++i )
+				{ 
+					int y = m_iCyChar * ( i - iVscrollPos );
+					TextOut( hdc, 3 , y , systemmetrics[i].szLabel, wcslen( systemmetrics[i].szLabel ) );
+					TextOut( hdc, 3 + 22 * m_iCxCap , y , systemmetrics[i].szDesc, wcslen( systemmetrics[i].szDesc) );
 					SetTextAlign( hdc, TA_RIGHT | TA_TOP );
-					TextOut( hdc, 3 + 54* cxCap, cyChar* i, szbuffer, wsprintf( szbuffer, TEXT("%5d"), ::GetSystemMetrics(systemmetrics[i].Index) ) );
+					TextOut( hdc, 3 + 54* m_iCxCap , y , szbuffer, wsprintf( szbuffer, TEXT("%5d"), ::GetSystemMetrics(systemmetrics[i].Index) ) );
 					SetTextAlign( hdc, TA_LEFT | TA_TOP );
 				}
 				EndPaint( hwnd, &ps );
@@ -236,10 +265,53 @@ LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 				{
 					SetBkMode( hdc, mode );
 				}
-				//ValidateRect(hwnd, NULL);
 				result = 0;
 			}
 			washandled = true;
+			break;
+		case WM_VSCROLL:
+			{
+				scrollinfo.cbSize = sizeof(scrollinfo);
+				scrollinfo.fMask = SIF_ALL;
+				GetScrollInfo( hwnd, SB_VERT, &scrollinfo );
+				iVscrollPos = scrollinfo.nPos;
+				switch( LOWORD(wParam) )
+				{
+				case SB_TOP:
+					scrollinfo.nPos = scrollinfo.nMin;
+					break;
+				case SB_BOTTOM:
+					scrollinfo.nPos = scrollinfo.nMax;
+					break;
+				case SB_LINEUP:
+					scrollinfo.nPos -= 1;
+					break;
+				case SB_LINEDOWN:
+					scrollinfo.nPos += 1;
+					break;
+				case SB_PAGEUP:
+					scrollinfo.nPos -= scrollinfo.nPage;
+					break;
+				case SB_PAGEDOWN:
+					scrollinfo.nPos += scrollinfo.nPage;
+					break;
+				case SB_THUMBTRACK:
+					scrollinfo.nPos = scrollinfo.nTrackPos;
+					break;
+				default:
+					break;
+				}
+				scrollinfo.fMask = SIF_POS;
+				SetScrollInfo( hwnd, SB_VERT, &scrollinfo, true );
+				GetScrollInfo( hwnd, SB_VERT, &scrollinfo );
+				if ( scrollinfo.nPos != iVscrollPos )
+				{
+					ScrollWindow( hwnd, 0, m_iCyChar*( iVscrollPos - scrollinfo.nPos ), NULL, NULL );
+					UpdateWindow( hwnd );
+				}
+			}
+			washandled = true;
+			result = 0;
 			break;
 
 		case WM_DESTROY:
@@ -258,13 +330,11 @@ LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 
 void MainApp::OnResize(UINT width, UINT height)
 {
-	if (m_pRenderTarget)
-	{
-		// Note: This method can fail, but it's okay to ignore the
-		// error here, because the error will be returned again
-		// the next time EndDraw is called.
-		m_pRenderTarget->Resize(D2D1::SizeU(width, height));
-	}
+	CHECKVALID( m_pRenderTarget );
+	// Note: This method can fail, but it's okay to ignore the
+	// error here, because the error will be returned again
+	// the next time EndDraw is called.
+	m_pRenderTarget->Resize(D2D1::SizeU(width, height));
 }
 
 HRESULT MainApp::OnRender()
@@ -273,68 +343,65 @@ HRESULT MainApp::OnRender()
 
 	hr = CreateDeviceResources();
 
-	if (SUCCEEDED(hr))
-	{
-		m_pRenderTarget->BeginDraw();
-
-		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-
-		D2D1_SIZE_F rtSize = m_pRenderTarget->GetSize();
-		// Draw a grid background.
-		int width = static_cast<int>(rtSize.width);
-		int height = static_cast<int>(rtSize.height);
-
-		for (int x = 0; x < width; x += 10)
-		{
-			m_pRenderTarget->DrawLine(
-				D2D1::Point2F(static_cast<FLOAT>(x), 0.0f),
-				D2D1::Point2F(static_cast<FLOAT>(x), rtSize.height),
-				m_pLightSlateGrayBrush,
-				0.2f
-				);
-		}
-
-		for (int y = 0; y < height; y += 10)
-		{
-			m_pRenderTarget->DrawLine(
-				D2D1::Point2F(0.0f, static_cast<FLOAT>(y)),
-				D2D1::Point2F(rtSize.width, static_cast<FLOAT>(y)),
-				m_pLightSlateGrayBrush,
-				0.2f
-				);
-		}
-
-		// Draw two rectangles.
-		D2D1_RECT_F rectangle1 = D2D1::RectF(
-			rtSize.width/2 - 50.0f,
-			rtSize.height/2 - 50.0f,
-			rtSize.width/2 + 50.0f,
-			rtSize.height/2 + 50.0f
-			);
-
-		D2D1_RECT_F rectangle2 = D2D1::RectF(
-			rtSize.width/2 - 100.0f,
-			rtSize.height/2 - 100.0f,
-			rtSize.width/2 + 100.0f,
-			rtSize.height/2 + 100.0f
-			);
-
-		// Draw a filled rectangle.
-		m_pRenderTarget->FillRectangle(&rectangle1, m_pLightSlateGrayBrush);
-
-		// Draw the outline of a rectangle.
-		m_pRenderTarget->DrawRectangle(&rectangle2, m_pCornflowerBlueBrush);
-
-		hr = m_pRenderTarget->EndDraw();
-	}
-
 	if (hr == D2DERR_RECREATE_TARGET)
 	{
 		hr = S_OK;
 		DiscardDeviceResources();
+		return hr;
 	}
+
+	CHECKVALIDRETURN( SUCCEEDED(hr), hr );
+	m_pRenderTarget->BeginDraw();
+	m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+	m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+
+	D2D1_SIZE_F rtSize = m_pRenderTarget->GetSize();
+	// Draw a grid background.
+	int width = static_cast<int>(rtSize.width);
+	int height = static_cast<int>(rtSize.height);
+
+	for (int x = 0; x < width; x += 10)
+	{
+		m_pRenderTarget->DrawLine(
+			D2D1::Point2F(static_cast<FLOAT>(x), 0.0f),
+			D2D1::Point2F(static_cast<FLOAT>(x), rtSize.height),
+			m_pLightSlateGrayBrush,
+			0.2f
+			);
+	}
+
+	for (int y = 0; y < height; y += 10)
+	{
+		m_pRenderTarget->DrawLine(
+			D2D1::Point2F(0.0f, static_cast<FLOAT>(y)),
+			D2D1::Point2F(rtSize.width, static_cast<FLOAT>(y)),
+			m_pLightSlateGrayBrush,
+			0.2f
+			);
+	}
+
+	// Draw two rectangles.
+	D2D1_RECT_F rectangle1 = D2D1::RectF(
+		rtSize.width/2 - 50.0f,
+		rtSize.height/2 - 50.0f,
+		rtSize.width/2 + 50.0f,
+		rtSize.height/2 + 50.0f
+		);
+
+	D2D1_RECT_F rectangle2 = D2D1::RectF(
+		rtSize.width/2 - 100.0f,
+		rtSize.height/2 - 100.0f,
+		rtSize.width/2 + 100.0f,
+		rtSize.height/2 + 100.0f
+		);
+
+	// Draw a filled rectangle.
+	m_pRenderTarget->FillRectangle(&rectangle1, m_pLightSlateGrayBrush);
+
+	// Draw the outline of a rectangle.
+	m_pRenderTarget->DrawRectangle(&rectangle2, m_pCornflowerBlueBrush);
+
+	hr = m_pRenderTarget->EndDraw();
 
 	return hr;
 }
@@ -342,80 +409,80 @@ HRESULT MainApp::OnRender()
 int MainApp::testFFmpeg()
 {
 	//MessageBox(0,L"pause",0,0);
-		encoding_decoding("./ok.okd","h264");		//暂不支持h264
-		AVFormatContext *fmt_ctx = NULL;
-		AVIOContext *avio_ctx = NULL;
-		AVDictionaryEntry *tag = NULL;
-		uint8_t *buffer = NULL, *avio_ctx_buffer = NULL;
-		size_t buffer_size , avio_ctx_buffer_size = 4096;
-		char *input_filename = NULL;
-		int ret = 0;
-		struct buffer_data bd = { 0 };
-		
-		/*if (argc != 2) {
-			fprintf(stderr, "usage: %s input_file\n"
-				"API example program to show how to read from a custom buffer "
-				"accessed through AVIOContext.\n", argv[0]);
-			return 1;
-		}*/
-		input_filename = "d:\\vs2008_Projects\\d2d\\Release\\GameofThronesS04E04.mp4";
+	encoding_decoding("./ok.okd","h264");		//暂不支持h264
+	AVFormatContext *fmt_ctx = NULL;
+	AVIOContext *avio_ctx = NULL;
+	AVDictionaryEntry *tag = NULL;
+	uint8_t *buffer = NULL, *avio_ctx_buffer = NULL;
+	size_t buffer_size , avio_ctx_buffer_size = 4096;
+	char *input_filename = NULL;
+	int ret = 0;
+	struct buffer_data bd = { 0 };
+	
+	/*if (argc != 2) {
+		fprintf(stderr, "usage: %s input_file\n"
+			"API example program to show how to read from a custom buffer "
+			"accessed through AVIOContext.\n", argv[0]);
+		return 1;
+	}*/
+	input_filename = "d:\\vs2008_Projects\\d2d\\Release\\GameofThronesS04E04.mp4";
 
-		if ( QString(input_filename).isEmpty() )
-		{
-			MessageBox(0,L"empty filename",0,0);
-		}
+	//if ( QString(input_filename).isEmpty() )
+	//{
+	//	MessageBox(0,L"empty filename",0,0);
+	//}
 
-		/* register codecs and formats and other lavf/lavc components*/
-		av_register_all();
+	/* register codecs and formats and other lavf/lavc components*/
+	av_register_all();
 
-		/* slurp file content into buffer */
-		ret = av_file_map(input_filename, &buffer, &buffer_size, 0, NULL);
-		if (ret < 0)
-			goto end;
+	/* slurp file content into buffer */
+	ret = av_file_map(input_filename, &buffer, &buffer_size, 0, NULL);
+	if (ret < 0)
+		goto end;
 
-		/* fill opaque structure used by the AVIOContext read callback */
-		bd.ptr  = buffer;
-		bd.size = buffer_size;
+	/* fill opaque structure used by the AVIOContext read callback */
+	bd.ptr  = buffer;
+	bd.size = buffer_size;
 
-		if (!(fmt_ctx = avformat_alloc_context())) {
-			ret = AVERROR(ENOMEM);
-			goto end;
-		}
+	if (!(fmt_ctx = avformat_alloc_context())) {
+		ret = AVERROR(ENOMEM);
+		goto end;
+	}
 
-		avio_ctx_buffer = (uint8_t*)(av_malloc(avio_ctx_buffer_size));
-		if (!avio_ctx_buffer) {
-			ret = AVERROR(ENOMEM);
-			goto end;
-		}
-		avio_ctx = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size,
-			0, &bd, &read_packet, NULL, NULL);
-		if (!avio_ctx) {
-			ret = AVERROR(ENOMEM);
-			goto end;
-		}
-		fmt_ctx->pb = avio_ctx;
+	avio_ctx_buffer = (uint8_t*)(av_malloc(avio_ctx_buffer_size));
+	if (!avio_ctx_buffer) {
+		ret = AVERROR(ENOMEM);
+		goto end;
+	}
+	avio_ctx = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size,
+		0, &bd, &read_packet, NULL, NULL);
+	if (!avio_ctx) {
+		ret = AVERROR(ENOMEM);
+		goto end;
+	}
+	fmt_ctx->pb = avio_ctx;
 
-		ret = avformat_open_input(&fmt_ctx, NULL, NULL, NULL);
-		if (ret < 0) {
-			//fprintf(stderr, "Could not open input\n");
-			goto end;
-		}
+	ret = avformat_open_input(&fmt_ctx, NULL, NULL, NULL);
+	if (ret < 0) {
+		//fprintf(stderr, "Could not open input\n");
+		goto end;
+	}
 
-		ret = avformat_find_stream_info(fmt_ctx, NULL);
-		if (ret < 0) {
-			//fprintf(stderr, "Could not find stream information\n");
-			goto end; 
-		}
+	ret = avformat_find_stream_info(fmt_ctx, NULL);
+	if (ret < 0) {
+		//fprintf(stderr, "Could not find stream information\n");
+		goto end; 
+	}
 
-		av_dump_format(fmt_ctx, 0, input_filename, 0);
-		while ((tag = av_dict_get(fmt_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
-		{
-			printf("%s=%s\n", tag->key, tag->value);
-			wstring key = FString(tag->key).toStdWString();
-			wstring value = FString(tag->value).toStdWString();
-			OutputDebugString(key.c_str()); wstring
-			OutputDebugString(value.c_str());
-		}
+	av_dump_format(fmt_ctx, 0, input_filename, 0);
+	while ((tag = av_dict_get(fmt_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+	{
+		printf("%s=%s\n", tag->key, tag->value);
+		wstring key = FString(tag->key).toStdWString();
+		wstring value = FString(tag->value).toStdWString();
+		OutputDebugString(key.c_str()); wstring
+		OutputDebugString(value.c_str());
+	}
 
 	end:
 		avformat_close_input(&fmt_ctx);
@@ -429,7 +496,7 @@ int MainApp::testFFmpeg()
 		if (ret < 0) 
 		{
 			//fprintf(stderr, "Error occurred: %s\n", av_err2str(ret));
-			MessageBox(0,QString("error: %1").arg(ret).toStdWString().c_str(),0,0);
+			//MessageBox(0,QString("error: %1").arg(ret).toStdWString().c_str(),0,0);
 			return 1;
 		}
 	return 0;	
@@ -475,14 +542,14 @@ void CDECL MainApp::MessageBoxPrintf( PTSTR caption, PTSTR szFormat,... )
 	va_end(arglist);
 }
 
-void MainApp::textMetric(  HDC hdc, int& cxChar,int& cyChar,int& cxCap )
+void MainApp::textMetric(  HDC hdc ,  int& cxchar, int& cychar, int& cxcap )
 {
 	CHECKVALID( hdc );
 	TEXTMETRIC tm;
 	GetTextMetrics( hdc, &tm );
-	cxChar = tm.tmAveCharWidth;
-	cyChar = tm.tmHeight + tm.tmExternalLeading;
-	cxCap = ( tm.tmPitchAndFamily & 1 ? 3 : 2 )  * cxChar / 2;
+	cxchar = tm.tmAveCharWidth;
+	cychar = tm.tmHeight + tm.tmExternalLeading;
+	cxcap = ( tm.tmPitchAndFamily & 1 ? 3 : 2 )  * cxchar / 2;
 }
 
 HBRUSH MainApp::getYellowBrush()
@@ -501,6 +568,25 @@ HFONT MainApp::getFont( HDC hdc )
 	int nHeight = -MulDiv(18, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 	HFONT font = CreateFont( nHeight,0, 0,0, FW_NORMAL,FALSE,FALSE,FALSE,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_SWISS,_T("simhei") );
 	return font;
+}
+
+void CALLBACK MainApp::updateScroll( HWND hwnd, UINT wndWidth, UINT wndHeight )
+{
+	CHECKVALID( ( m_uWndWidth != wndWidth ) && ( m_uWndWidth != wndHeight ) && wndWidth && wndHeight );
+	m_uWndWidth = wndWidth;
+	m_uWndHeight = wndHeight;
+	SCROLLINFO scrollinfo;
+	scrollinfo.cbSize = sizeof(SCROLLINFO);
+	scrollinfo.fMask = SIF_PAGE|SIF_RANGE;
+	scrollinfo.nMin = 0;
+	scrollinfo.nMax = NUMLINES - 1;
+	scrollinfo.nPage = m_uWndHeight/m_iCyChar;
+	SetScrollInfo( hwnd, SB_VERT, &scrollinfo, true );
+	/*scrollinfo.cbSize = sizeof( SCROLLINFO );
+	scrollinfo.fMask = SIF_RANGE|SIF_PAGE;
+	scrollinfo.nMin = 0;
+	scrollinfo.nMax = 3 + iMaxWidth / cxChar;
+	SetScrollInfo( hwnd, SB_HORZ, &scrollinfo, true );*/
 }
 
 int WINAPI WinMain(

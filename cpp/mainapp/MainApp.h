@@ -15,10 +15,6 @@
 #include <wincodec.h>
 #include <string>
 #include "ffmpegutils.h"
-#include <QObject>
-#include <QPointer>
-#include <QtGui/QWidget>
-#include <QtCore/qnamespace.h>
 #include <atlcomcli.h>
 
 template<class Interface>
@@ -59,7 +55,7 @@ public:
 	// Process and dispatch messages
 	void RunMessageLoop();
 	void static CDECL MessageBoxPrintf(PTSTR caption, PTSTR szFormat,...);
-	static void textMetric( HDC hdc, int& cxChar,int& cyChar,int& cxCap );
+	static void textMetric( HDC hdc , int& cxchar, int& cychar, int& cxcap );
 private:
 	HBRUSH	getYellowBrush();
 	static HFONT getFont( HDC hdc );
@@ -95,7 +91,13 @@ private:
 		WPARAM wParam,
 		LPARAM lParam
 		);
+	static void CALLBACK updateScroll( HWND hwnd, UINT wndWidth, UINT wndHeight );
 private:
+	static int		m_iCxChar;
+	static int		m_iCyChar;
+	static int		m_iCxCap;
+	static UINT 	m_uWndWidth;
+	static UINT	m_uWndHeight;
 	HWND m_hwnd;
 	ID2D1Factory* m_pDirect2dFactory;
 	ID2D1HwndRenderTarget* m_pRenderTarget;
@@ -103,7 +105,7 @@ private:
 	ID2D1SolidColorBrush* m_pCornflowerBlueBrush;
 
 	HBRUSH									m_bYellowBrush;
-	QPointer<QWidget>					m_pWidget;
+	//QPointer<QWidget>					m_pWidget;
 };
 
 
@@ -125,6 +127,27 @@ systemmetrics[] = {
 	SM_CXFIXEDFRAME,TEXT("SM_CXFIXEDFRAME"),TEXT("Dialog window frame width"),
 	SM_CYFIXEDFRAME,TEXT("SM_CYFIXEDFRAME"),TEXT("Dialog window frame height"),
 	SM_CYVTHUMB,TEXT("SM_CYVTHUMB"),TEXT("垂直滚动条卷动方块高度"),
-	SM_CXHTHUMB,TEXT("SM_CXHTHUMB"),TEXT("水平滚动条卷动方块宽度")
+	SM_CXHTHUMB,TEXT("SM_CXHTHUMB"),TEXT("水平滚动条卷动方块宽度"),
+	SM_CXICON,TEXT("SM_CXICON"),TEXT("Icon width"),
+	SM_CYICON,TEXT("SM_CYICON"),TEXT("Icon height"),
+	SM_CXCURSOR,TEXT("SM_CXCURSOR"),TEXT("cursor width"),
+	SM_CYCURSOR,TEXT("SM_CYCURSOR"),TEXT("cursor height"),
+	SM_CYMENU,TEXT("SM_CYMENU"),TEXT("菜单条高度"),
+	SM_CXFULLSCREEN,TEXT("SM_CXFULLSCREEN"),TEXT("全屏客户端区域宽度"),
+	SM_CYFULLSCREEN,TEXT("SM_CYFULLSCREEN"),TEXT("全屏客户端区域高度"),
+	SM_CYKANJIWINDOW,TEXT("SM_CYKANJIWINDOW"),TEXT("kanji 窗口height"),
+	SM_MOUSEPRESENT,TEXT("SM_MOUSEPRESENT"),TEXT("mouse present flag"),
+	SM_CYVSCROLL,TEXT("SM_CYVSCROLL"),TEXT("垂直滚动条arrow高"),
+	SM_CXHSCROLL,TEXT("SM_CXHSCROLL"),TEXT("水平滚动条arrow高"),
+	SM_DEBUG,TEXT("SM_DEBUG"),TEXT("debug 版本 flag"),
+	SM_SWAPBUTTON,TEXT("SM_SWAPBUTTON"),TEXT("鼠标按钮 swapped flag"),
+	SM_CXMIN,TEXT("SM_CXMIN"),TEXT("最小窗口宽度"),
+	SM_CYMIN,TEXT("SM_CYMIN"),TEXT("最小窗口高度"),
+	SM_CXSIZE,TEXT("SM_CXSIZE"),TEXT("最小/最大/关闭按钮宽度"),
+	SM_CYSIZE,TEXT("SM_CYSIZE"),TEXT("最小/最大/关闭按钮高度"),
+	SM_CXSIZEFRAME,TEXT("SM_CXSIZEFRAME"),TEXT("windows sizing frame width"),
+	SM_CYSIZEFRAME,TEXT("SM_CYSIZEFRAME"),TEXT("windows sizing frame height"),
+	SM_CXMINTRACK,TEXT("SM_CXMINTRACK"),TEXT("Minimum window tracking width"),
+	SM_CYMINTRACK,TEXT("SM_CYMINTRACK"),TEXT("Minimum window tracking height"),
 };
 #endif

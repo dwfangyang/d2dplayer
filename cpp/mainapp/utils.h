@@ -16,7 +16,7 @@
 #define CONDITIONEXE(a,b,c)	( a ) ? ( b ) : ( c )
 #define CHECKVALID(a)			do{ if(!(a)) return;}while(0)
 #define CHECKVALIDRETURN( a, b )  do{ if(!(a)) return (b);}while(0)
-#define CHECKEDCALL( hr , exeblock ) do{ if ( SUCCEEDED(hr) ) hr = ( exeblock ) ; } while(0)
+#define CHECKEDCALL( hr , exeblock ) do{ if ( SUCCEEDED(hr) ) hr = (exeblock) ; } while(0)
 
 namespace Utils
 {

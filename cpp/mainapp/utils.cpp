@@ -41,9 +41,11 @@ Utils::FFont::~FFont()
 void Utils::FFont::loadFont( HDC hdc )
 {
 	CHECKVALID( hdc );
-	deleteFont();
-	HFONT font = createWinFont( hdc );
-	SelectObject( hdc, font );
+	if ( !m_hFont )
+	{
+		m_hFont = createWinFont( hdc );
+	}
+	SelectObject( hdc, m_hFont );
 }
 
 void Utils::FFont::deleteFont()
@@ -55,6 +57,6 @@ void Utils::FFont::deleteFont()
 HFONT Utils::FFont::createWinFont( HDC hdc )
 {
 	int nHeight = -MulDiv( m_iPixelHeight , GetDeviceCaps(hdc, LOGPIXELSY), 72);
-	HFONT font = CreateFont( nHeight,0, 0,0, FW_NORMAL,FALSE,FALSE,FALSE,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_SWISS,TEXT("simhei") );
+	HFONT font = CreateFont( nHeight,0, 0,0, FW_NORMAL,FALSE,FALSE,FALSE,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_SWISS,TEXT("Microsoft YaHei") );
 	return font;
 }

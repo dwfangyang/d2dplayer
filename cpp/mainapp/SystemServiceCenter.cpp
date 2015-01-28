@@ -1,6 +1,9 @@
 #include "SystemServiceCenter.h"
+#include "Pdh.h"
 #include "utils.h"
 
+static PDH_HQUERY cpuQuery;
+static PDH_HCOUNTER cpuTotal;
 static SystemServiceCenter* syssrvcenter = NULL;
 SystemServiceCenter::SystemServiceCenter()
 {
@@ -18,6 +21,7 @@ SystemServiceCenter* SystemServiceCenter::getInstance()
 	if ( !syssrvcenter )
 	{
 		syssrvcenter = new SystemServiceCenter();		
+		syssrvcenter->init();
 	}
 	return syssrvcenter;
 }
@@ -34,4 +38,22 @@ int64_t SystemServiceCenter::getSysProperty(uint32_t index)
 void SystemServiceCenter::destroyInstance()
 {
 	SAFEDELETE(syssrvcenter);
+}
+
+LRESULT WINAPI SystemServiceCenter::init()
+{
+	LRESULT ret = S_OK;
+	PdhOpenQuery(NULL, NULL, &cpuQuery);
+	PdhAddCounter(cpuQuery, L"\\Processor(_Total)\\% Processor Time", NULL, &cpuTotal);
+	PdhCollectQueryData(cpuQuery);
+	return ret;
+}
+
+double SystemServiceCenter::getCurrentCpuUsageValue()
+{
+	PDH_FMT_COUNTERVALUE counterVal;
+
+	PdhCollectQueryData(cpuQuery);
+	PdhGetFormattedCounterValue(cpuTotal, PDH_FMT_DOUBLE, NULL, &counterVal);
+	return counterVal.doubleValue;
 }

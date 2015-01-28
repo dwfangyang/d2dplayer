@@ -13,9 +13,11 @@ public:
 	static SystemServiceCenter* getInstance();
 	static void destroyInstance();
 	int64_t		getSysProperty(uint32_t index);
+	double		getCurrentCpuUsageValue();
 private: 
 	SystemServiceCenter();
 	~SystemServiceCenter();
+	LRESULT WINAPI init();
 
 private:
 	std::map<uint32_t,int64_t>				m_mSysInfo;

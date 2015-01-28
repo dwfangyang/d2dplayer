@@ -1,8 +1,6 @@
 #ifndef QTMAINWND_H
 #define QTMAINWND_H
 
-#include <QtCore/QObject>
-#include <QMainWindow>
 #include "inttypes.h"
 #include "utils.h"
 
