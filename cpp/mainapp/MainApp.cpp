@@ -210,10 +210,9 @@ LRESULT CALLBACK MainApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 				textMetric( hdc , m_iCxChar, m_iCyChar, m_iCxCap );
 				updateScroll( hwnd, width , height );
 				ReleaseDC( hwnd, hdc );
-				CHAR buf[1000];
 				double a = SystemServiceCenter::getInstance()->getCurrentCpuUsageValue();
-				//StringCbPrintf( buf, 1000*sizeof(TCHAR), TEXT("%10.5lf"), a );
-				sprintf( buf, "%10.5lf", a );
+				FString cpustr = FString::number( a );
+				//::MessageBoxA( 0, cpustr.toStdString().c_str(),0,0);
 				//buf[len] = '\0';
 			}
 			//PlaySound (TEXT("hellowin.wav"),NULL,SND_FILENAME|SND_ASYNC);

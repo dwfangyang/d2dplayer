@@ -18,11 +18,9 @@ SystemServiceCenter::~SystemServiceCenter()
 
 SystemServiceCenter* SystemServiceCenter::getInstance()
 {
-	if ( !syssrvcenter )
-	{
-		syssrvcenter = new SystemServiceCenter();		
-		syssrvcenter->init();
-	}
+	CHECKVALIDRETURN( !syssrvcenter, syssrvcenter );
+	syssrvcenter = new SystemServiceCenter();		
+	syssrvcenter->init();
 	return syssrvcenter;
 }
 
